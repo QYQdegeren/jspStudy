@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itcast.mapper.brandMapper">
+
+    <!--数据库的字段名称和类中的不一样，不能自动封装-->
+
+    <!--<select id="selectAll" resultType="brand">
+        select *
+        from tb_brand;
+    </select>-->
+
+<!--   &lt;!&ndash; &lt;!&ndash;sql片段&ndash;&gt;&lt;!&ndash;不够灵活&ndash;&gt;-->
+<!--    <sql id="brand_column">-->
+<!--        id , brand_name brandName , company_name companyName , ordered , description , status-->
+<!--    </sql>-->
+
+<!--    &lt;!&ndash;区别名，让实体类的名称和数据库一样&ndash;&gt;-->
+<!--    <select id="selectAll" resultType="brand">-->
+<!--        select-->
+<!--            <include refid="brand_column"></include>-->
+<!--        from tb_brand;-->
+<!--    </select>&ndash;&gt;-->
+
+    <!--
+        id 唯一表示
+        type 映射的类型，支持别名
+        使用resultMap标签完成属性名和列明的映射
+    -->
+    <resultMap id="brandResultMapper" type="brand">
+        <!--
+            id  主键的映射
+            result 完成一般字段映射
+            column 表的列名
+            property 实体类的属性名
+        -->
+        <result column="brand_name" property="brandName"/>
+        <result column="company_name" property="companyName"/>
+    </resultMap>
+
+
+
+    <!--使用resultMap属性替换resultType-->
+    <select id="selectAll" resultMap="brandResultMapper">
+        select
+        *
+        from tb_brand;
+    </select>
+
+
+    <!--
+        参数占位符
+            #{} - ?
+            ${} - 拼sql，会有sql注入的问题
+            *在参数传递的时候使用 #{}
+            *${} 在表明或列名不固定时使用
+        参数类型 parameterType 可以省略
+        *特殊字符处理：
+            1、转义字符 &lt;  =  <
+            2、CDATA区
+    -->
+
+    <select id="selectByid" resultType="brand">
+        select * from tb_brand where id
+         <![CDATA[
+         =
+         ]]>
+         #{id};
+    </select>
+    <!-- <select id="selectByid" resultMap="brandResultMapper">
+         select * from tb_brand where id = #{id};
+     </select>-->
+
+
+
+    <!--条件查询-->
+    <select id="selectBycondition" resultMap="brandResultMapper">
+        select *
+        from tb_brand
+        where company_name like #{companyName} and brand_name like #{brandName};
+    </select>
+
+
+
+    <!--动态条件查询-->
+    <select id="selectBycondition2" resultMap="brandResultMapper">
+        select *
+        from tb_brand
+        <where>
+            <if test="status != null">
+                status = #{status}
+            </if>
+            <if test="companyName != null and companyName != ''">
+                company_name like #{companyName}
+            </if>
+            <if test="brandName != null and brandName != ''">
+                brand_name like #{brandName};
+            </if>
+        </where>
+    </select>
+
+
+    <!--单条件的动态查询-->
+    <select id="selectBySingle" resultMap="brandResultMapper">
+        select *
+        from tb_brand
+        <where>
+        <choose><!--类似switch-->
+            <when test="status != null">
+                status = #{status}
+            </when>
+            <when test="companyName != null and companyName != ''">
+                company_name like #{companyName}
+            </when>
+            <when test="brandName != null and brandName != ''">
+                brand_name like #{brandName}
+            </when>
+           <!-- <otherwise>
+                1=1
+            </otherwise>-->
+        </choose>
+        </where>
+    </select>
+
+
+    <!--添加-->
+    <insert id="add" useGeneratedKeys="true" keyProperty="id">
+        insert into tb_brand (brand_name,company_name,ordered,description,status)
+        values(#{brandName},#{companyName},#{ordered},#{description},#{status})
+    </insert>
+
+
+    <update id="updata">
+        update tb_brand
+        set
+            brand_name = #{brandName},
+            company_name = #{companyName},
+            description = #{description},
+            status = #{status},
+            ordered = #{ordered}
+        where
+            id = #{id};
+    </update>
+
+
+    <update id="updata2">
+        update tb_brand
+        <set>
+            <if test="brandName != null and brandName != ''">
+                brand_name = #{brandName},
+            </if>
+            <if test="companyName != null and companyName != ''">
+                company_name = #{companyName},
+            </if>
+            <if test="description != null and description != ''">
+                description = #{description},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="ordered != null">
+                ordered = #{ordered}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+
+    <delete id="delectByid">
+        delete from tb_brand where id = #{id};
+    </delete>
+
+    <!--
+    mybatis会将数组参数，封装为一个Map集合
+        *默认情况下 array = 数组  collection = "array"
+        *也可以使用@param注解改变map集合的默认key的名称
+    -->
+    <delete id="delectByids">
+        delete from tb_brand where id
+        in(
+            <foreach collection="ids" item="id" separator=",">
+                #{id}
+            </foreach>
+            );
+    </delete>
+
+
+</mapper>
